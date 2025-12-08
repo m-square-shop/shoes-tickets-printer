@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Label Generator</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+    
+    <!-- CDN Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+
+    <style>
+        /* CSS for immersive ticket editing experience */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .header {
+            color: #000;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header p {
+            margin: 12px 0 0 0;
+            color: #555;
+            font-size: 16px;
+        }
+        .ticket-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+            padding: 45px;
+            max-width: 900px;
+            width: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .ticket-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+        }
+        .ticket-label {
+            width: 100%;
+            aspect-ratio: 5/3; /* Landscape ratio */
+            border: 3px solid #000;
+            background: white;
+            padding: 15px;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .ticket-product-name {
+            font-weight: normal;
+            font-size: 32px;
+            color: #000;
+            text-align: center;
+            margin-bottom: 3px;
+            padding: 6px 8px;
+            border: 2px dashed transparent;
+            border-radius: 6px;
+            cursor: text;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: pre-line;
+            line-height: 1.3;
+        }
+        .ticket-product-name:hover {
+            border-color: #bbb;
+            background: #f8f9fa;
+        }
+        .ticket-product-name:focus {
+            border-color: #4a90e2;
+            background: #f0f7ff;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        .ticket-company-name-static {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0;
+            margin: 0;
+            user-select: none;
+            cursor: default;
+        }
+        .ticket-company-logo {
+            height: 90px;
+            width: auto;
+            display: block;
+        }
+        .ticket-company-logo svg {
+            height: 100%;
+            width: auto;
+            display: block;
+        }
+        .ticket-qrcode {
+            width: 220px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 3px auto 10px auto;
+        }
+        #preview-qrcode-div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .ticket-product-id-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 8px auto 10px auto;
+        }
+        .ticket-product-id-input {
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: normal;
+            color: #000;
+            background: transparent;
+            border: 2px dashed transparent;
+            border-radius: 6px;
+            padding: 6px 12px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 150px;
+            max-width: 350px;
+        }
+        .ticket-product-id-input:hover {
+            border-color: #bbb;
+            background: #f8f9fa;
+        }
+        .ticket-product-id-input:focus {
+            border-color: #4a90e2;
+            background: #f0f7ff;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        .ticket-product-id {
+            font-size: 11px;
+            font-weight: normal;
+            text-align: center;
+            color: #000;
+            margin-bottom: 15px;
+            padding: 4px;
+            border: 2px dashed transparent;
+            border-radius: 4px;
+            cursor: text;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .ticket-product-id:hover {
+            border-color: #999;
+            background: #f5f5f5;
+        }
+        .ticket-product-id:focus {
+            border-color: #666;
+            background: #f5f5f5;
+        }
+        .ticket-bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+            gap: 10px; /* Reduced gap further to prevent overflow */
+            min-width: 0; /* Allow flex items to shrink below content size */
+            overflow: visible; /* Ensure all content is visible */
+        }
+        .ticket-label-left {
+            flex: 1 1 0%; /* Allow growing and shrinking, start from 0 */
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+            max-width: 48%; /* Reduced from 50% to prevent overflow */
+            min-width: 0; /* Allow shrinking below content size */
+            overflow: hidden; /* Prevent overflow */
+        }
+        .ticket-price-right {
+            flex: 0 0 auto; /* Don't shrink - maintain size */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            gap: 0px; /* No gap - prices are very close */
+            min-width: fit-content; /* Ensure it fits its content */
+            overflow: visible; /* Ensure both prices are visible */
+        }
+        .ticket-old-price-wrapper,
+        .ticket-current-price-wrapper {
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+        .ticket-old-price-wrapper.hidden {
+            display: none !important;
+        }
+        .ticket-old-price,
+        .ticket-current-price {
+            font-family: Arial, sans-serif;
+            background: transparent;
+            border: 2px dashed transparent;
+            border-radius: 6px;
+            padding: 2px 6px;
+            margin: 0;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: right;
+            white-space: nowrap;
+            min-width: 60px;
+            max-width: 200px;
+        }
+        .ticket-old-price {
+            font-size: 26px;
+            font-weight: normal;
+            color: #000;
+            text-decoration: line-through;
+            text-decoration-thickness: 3px;
+        }
+        .ticket-current-price {
+            font-size: 52px;
+            font-weight: bold;
+            color: #000;
+            line-height: 1;
+        }
+        .ticket-old-price:hover,
+        .ticket-current-price:hover {
+            border-color: #bbb;
+            background: #f8f9fa;
+            transform: scale(1.02);
+        }
+        .ticket-old-price:focus,
+        .ticket-current-price:focus {
+            border-color: #4a90e2;
+            background: #f0f7ff;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+        .ticket-currency {
+            font-size: inherit;
+            font-weight: inherit;
+            color: #000;
+            white-space: nowrap;
+            user-select: none;
+            margin-left: 4px;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+        .ticket-old-price-wrapper .ticket-currency {
+            font-size: 26px;
+            text-decoration: line-through;
+            text-decoration-thickness: 3px;
+        }
+        .ticket-current-price-wrapper .ticket-currency {
+            font-size: 52px;
+            font-weight: bold;
+        }
+        .ticket-discount {
+            font-weight: bold;
+            font-size: 14px;
+            color: #000;
+            padding: 2px 4px;
+            border: 2px dashed transparent;
+            border-radius: 4px;
+            cursor: text;
+            outline: none;
+            transition: all 0.2s;
+            min-width: 100px;
+            text-align: right;
+        }
+        .ticket-discount:hover {
+            border-color: #999;
+            background: #f5f5f5;
+        }
+        .ticket-discount:focus {
+            border-color: #666;
+            background: #f5f5f5;
+        }
+        .print-button-container {
+            margin-top: 40px;
+            text-align: center;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+        .print-button, .download-button {
+            padding: 18px 45px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            max-width: 280px;
+            position: relative;
+            overflow: hidden;
+        }
+        .print-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .print-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+        .print-button:active {
+            transform: translateY(-1px);
+        }
+        .download-button {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        }
+        .download-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.5);
+        }
+        .download-button:active {
+            transform: translateY(-1px);
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Hidden area used for generating the images before placing them in the PDF */
+        #code-staging {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+        }
+        #code-staging canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>📦 Product Ticket Printer</h1>
+        <p>Edit your ticket below, then click Print</p>
+    </div>
+
+    <div class="ticket-container">
+        <div class="ticket-label" id="ticket-label">
+            <!-- Product Name centered at top -->
+            <div class="ticket-product-name" 
+                 contenteditable="true" 
+                 id="ticket-product-name"
+                 data-placeholder="Product Name">PUMA BMW MMS LGND  Renegade</div>
+            
+            <!-- QR Code centered -->
+            <div class="ticket-qrcode">
+                <div id="preview-qrcode-div"></div>
+            </div>
+            
+            <!-- Product ID input under QR code -->
+            <div class="ticket-product-id-container">
+                <input type="text" 
+                       class="ticket-product-id-input" 
+                       id="ticket-product-id-input"
+                       placeholder="Product ID"
+                       value="PUMA_FerrariRSBlack">
+            </div>
+            
+            <!-- Bottom Section: Company Name (left) | Price (right) -->
+            <div class="ticket-bottom-section">
+                <div class="ticket-label-left">
+                    <div class="ticket-company-name-static" 
+                         id="ticket-company-name">
+                        <div class="ticket-company-logo">
+                            <svg width="1327" height="1327" viewBox="0 0 1327 1327" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1100.72 227H226V351.961H975.763V976.764H791.447L707.098 1101.73H1100.72V227Z" fill="black"/>
+                                <path d="M675.86 501.914H813.316L519.659 961.145L350.962 708.099L350.962 1101.73H226.001V501.914H363.456L519.659 748.712L675.86 501.914Z" fill="black"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="ticket-price-right">
+                    <div class="ticket-old-price-wrapper" id="ticket-old-price-wrapper">
+                        <input type="text" 
+                               class="ticket-old-price" 
+                               id="ticket-old-price"
+                               placeholder="Old Price"
+                               value="21500"
+                               inputmode="numeric">
+                        <span class="ticket-currency">DZD</span>
+                    </div>
+                    <div class="ticket-current-price-wrapper">
+                        <input type="text" 
+                               class="ticket-current-price" 
+                               id="ticket-current-price"
+                               placeholder="Price"
+                               value="18950"
+                               inputmode="numeric">
+                        <span class="ticket-currency">DZD</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hidden Product ID for QR code generation -->
+            <div class="ticket-product-id hidden" 
+                 contenteditable="true" 
+                 id="ticket-product-id"
+                 data-placeholder="Product ID">ID: PUMA_FerrariRSBlack</div>
+        </div>
+
+        <div class="print-button-container">
+            <button class="print-button" onclick="printTicket()">🖨️ Print Directly</button>
+            <button class="download-button" onclick="downloadTicket()">💾 Download PDF</button>
+        </div>
+    </div>
+
+    <!-- Hidden inputs for calculations -->
+    <input type="hidden" id="product-name" value="PUMA BMW MMS LGND  Renegade">
+    <input type="hidden" id="product-id" value="PUMA_FerrariRSBlack">
+    <input type="hidden" id="old-price" value="21500">
+    <input type="hidden" id="current-price" value="18950">
+
+    <div id="code-staging">
+        <div id="qrcode-div"></div>
+    </div>
+
+    <script>
+        // Wait for DOM and libraries to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait a bit for CDN libraries to load
+            setTimeout(function() {
+                if (typeof window.jspdf === 'undefined') {
+                    alert('Error: jsPDF library failed to load from CDN. Please check your internet connection.');
+                    return;
+                }
+                
+                if (typeof QRCode === 'undefined') {
+                    alert('Error: QRCode library failed to load from CDN. Please check your internet connection.');
+                    return;
+                }
+                
+                // Initialize application
+                initApp();
+            }, 100);
+        });
+        
+        function initApp() {
+            // Use window.jsPDF to access the library loaded via CDN
+            const { jsPDF } = window.jspdf;
+
+            // --- Helper function to convert SVG to Canvas/Image ---
+            // Optimized: Calculate canvas size based on final PDF output size
+            function svgToCanvas(svgElement, targetHeightMM = 10) {
+            return new Promise((resolve) => {
+                const svgData = new XMLSerializer().serializeToString(svgElement);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                // Get dimensions from SVG element or use viewBox
+                const svgWidth = svgElement.width?.baseVal?.value || svgElement.viewBox?.baseVal?.width || 1327;
+                const svgHeight = svgElement.height?.baseVal?.value || svgElement.viewBox?.baseVal?.height || 1327;
+                
+                // Calculate optimal canvas size based on PDF output
+                // PDF is 80mm wide, logo will be ~10mm tall
+                // At 300 DPI (print quality): 10mm = ~118 pixels
+                // Use 2x for retina/quality: ~236 pixels
+                // But keep it reasonable: max 400px for performance
+                const DPI = 300;
+                const MM_TO_INCH = 25.4;
+                const targetHeightPx = Math.min((targetHeightMM / MM_TO_INCH) * DPI * 2, 400);
+                const aspectRatio = svgWidth / svgHeight;
+                const targetWidthPx = targetHeightPx * aspectRatio;
+                
+                canvas.width = Math.round(targetWidthPx);
+                canvas.height = Math.round(targetHeightPx);
+                
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                
+                img.onerror = function() {
+                    console.error('Error loading SVG image');
+                    resolve(null);
+                };
+                
+                img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            });
+        }
+
+            // --- Helper function to format number with thousands separators ---
+            function formatNumber(num) {
+                if (!num && num !== 0) return '';
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+
+            // --- Helper function to extract number from text ---
+            function extractNumber(text) {
+                const match = text.match(/[\d,]+\.?\d*/);
+                return match ? parseFloat(match[0].replace(/,/g, '')) : 0;
+            }
+
+            // --- Helper function to extract ID from text ---
+            function extractID(text) {
+                const match = text.match(/ID:\s*(\d+)/i) || text.match(/(\d{8,})/);
+                return match ? match[1] : '';
+            }
+
+            // --- Event Listeners and Calculations ---
+            const companyNameEl = document.getElementById('ticket-company-name'); // Now static, uneditable
+            const productNameEl = document.getElementById('ticket-product-name'); // Now at top
+            const productIdEl = document.getElementById('ticket-product-id');
+            const currentPriceEl = document.getElementById('ticket-current-price');
+            const oldPriceEl = document.getElementById('ticket-old-price');
+
+            // Handle product name changes (now at top)
+            if (productNameEl) {
+                productNameEl.addEventListener('input', () => {
+                    const name = productNameEl.textContent.trim();
+                    document.getElementById('product-name').value = name;
+                    updatePreview();
+                });
+            }
+
+            // Handle product ID changes
+            if (productIdEl) {
+                productIdEl.addEventListener('input', () => {
+                    const id = extractID(productIdEl.textContent);
+                    document.getElementById('product-id').value = id;
+                    updatePreview();
+                });
+            }
+
+            // Handle current price changes - only allow numbers, format on blur
+            if (currentPriceEl) {
+                // On focus, show plain number for editing
+                currentPriceEl.addEventListener('focus', (e) => {
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    e.target.value = value;
+                });
+                
+                // On input, filter to only allow digits
+                currentPriceEl.addEventListener('input', (e) => {
+                    const value = e.target.value.replace(/[^\d]/g, ''); // Remove all non-digits
+                    e.target.value = value;
+                    const price = parseFloat(value) || 0;
+                    document.getElementById('current-price').value = price;
+                    updateDiscount();
+                    updatePreview();
+                });
+                
+                // On blur, format with thousands separators
+                currentPriceEl.addEventListener('blur', (e) => {
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    const price = parseFloat(value) || 0;
+                    if (price > 0) {
+                        e.target.value = formatNumber(price);
+                    }
+                    document.getElementById('current-price').value = price;
+                    updateDiscount();
+                    updatePreview();
+                });
+            }
+
+            // Handle old price changes - only allow numbers, format on blur
+            if (oldPriceEl) {
+                // On focus, show plain number for editing
+                oldPriceEl.addEventListener('focus', (e) => {
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    e.target.value = value;
+                });
+                
+                // On input, filter to only allow digits
+                oldPriceEl.addEventListener('input', (e) => {
+                    const value = e.target.value.replace(/[^\d]/g, ''); // Remove all non-digits
+                    e.target.value = value;
+                    const price = parseFloat(value) || 0;
+                    document.getElementById('old-price').value = price;
+                    updateDiscount();
+                    updatePreview();
+                });
+                
+                // On blur, format with thousands separators
+                oldPriceEl.addEventListener('blur', (e) => {
+                    const value = e.target.value.replace(/[^\d]/g, '');
+                    const price = parseFloat(value) || 0;
+                    if (price > 0) {
+                        e.target.value = formatNumber(price);
+                    }
+                    document.getElementById('old-price').value = price;
+                    updateDiscount();
+                    updatePreview();
+                });
+            }
+
+            // Handle product ID input changes - allow text, numbers, and special characters
+            const productIdInputEl = document.getElementById('ticket-product-id-input');
+            if (productIdInputEl) {
+                // Initialize hidden input and QR code
+                const id = productIdInputEl.value.trim();
+                document.getElementById('product-id').value = id;
+                
+                // Add event listener for input changes
+                productIdInputEl.addEventListener('input', (e) => {
+                    const id = e.target.value.trim();
+                    // Update hidden input for compatibility
+                    document.getElementById('product-id').value = id;
+                    // Update QR code immediately
+                    updateQRCode(id);
+                });
+                
+                // Generate initial QR code
+                updateQRCode(id);
+            }
+
+            // Prevent line breaks in contenteditable fields (product name allows multi-line)
+            // Company name is now static, product ID is an input field
+
+            // Initialize hidden inputs from visible inputs and format prices
+            if (currentPriceEl) {
+                const currentPrice = parseFloat(currentPriceEl.value.replace(/[^\d]/g, '')) || 0;
+                document.getElementById('current-price').value = currentPrice;
+                if (currentPrice > 0) {
+                    currentPriceEl.value = formatNumber(currentPrice);
+                }
+            }
+            if (oldPriceEl) {
+                const oldPrice = parseFloat(oldPriceEl.value.replace(/[^\d]/g, '')) || 0;
+                document.getElementById('old-price').value = oldPrice;
+                if (oldPrice > 0) {
+                    oldPriceEl.value = formatNumber(oldPrice);
+                }
+            }
+            
+            // Initial update
+            updateDiscount();
+            updatePreview();
+            
+            // --- Helper Functions ---
+            
+            function updateDiscount() {
+                // Old price input is always visible in HTML (with placeholder)
+                // PDF generation will handle showing/hiding based on value
+                // This function kept for potential future use
+            }
+
+            // Function to update QR code
+            function updateQRCode(id) {
+                const qrcodeDiv = document.getElementById('preview-qrcode-div');
+                if (qrcodeDiv) {
+                    qrcodeDiv.innerHTML = '';
+                    if (id && id.trim()) {
+                        new QRCode(qrcodeDiv, {
+                            text: id.trim(),
+                            width: 220,
+                            height: 220,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                    }
+                }
+            }
+
+            function updatePreview() {
+                const name = document.getElementById('product-name')?.value || '';
+                const oldPrice = parseFloat(document.getElementById('old-price')?.value) || 0;
+                const currentPrice = parseFloat(document.getElementById('current-price')?.value) || 0;
+
+                // Update product name if empty
+                const productNameEl = document.getElementById('ticket-product-name');
+                if (productNameEl) {
+                    if (!name && productNameEl.textContent.trim() === '') {
+                        productNameEl.textContent = 'Product Name';
+                    }
+                }
+
+                // Price inputs handle their own values - DZD is persistent in UI
+                // No need to update price displays here
+
+                // Update QR code from product ID input
+                const productIdInput = document.getElementById('ticket-product-id-input');
+                if (productIdInput) {
+                    const id = productIdInput.value.trim();
+                    document.getElementById('product-id').value = id;
+                    updateQRCode(id);
+                }
+            }
+
+            // --- PDF Generation Logic ---
+
+            async function generatePDF() {
+                const companyNameEl = document.getElementById('ticket-company-name');
+                const productNameEl = document.getElementById('ticket-product-name');
+                const productIdInputEl = document.getElementById('ticket-product-id-input');
+                const oldPriceEl = document.getElementById('ticket-old-price');
+                const currentPriceEl = document.getElementById('ticket-current-price');
+
+                if (!companyNameEl || !productNameEl || !productIdInputEl || !currentPriceEl) {
+                    alert("Error: Some required elements are missing.");
+                    return null;
+                }
+
+                // Get SVG logo from company name element
+                const companyLogoSvg = companyNameEl.querySelector('svg');
+                
+                // Preserve line breaks from <br> tags - convert <br> to newlines
+                const nameHTML = productNameEl.innerHTML;
+                const name = nameHTML.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim();
+                // Get product ID from input field (can contain text, numbers, and special chars)
+                const id = productIdInputEl.value.trim();
+                // Get prices from input elements (remove formatting commas)
+                const oldPrice = oldPriceEl ? parseFloat(oldPriceEl.value.replace(/[^\d]/g, '')) || 0 : 0;
+                const currentPrice = parseFloat(currentPriceEl.value.replace(/[^\d]/g, '')) || 0;
+                // Only show old price in PDF if it has a value and is greater than current price
+                const showOldPrice = oldPrice > currentPrice && oldPrice > 0;
+                
+                // Calculate discount
+                let discountPercent = 0;
+                if (oldPrice > currentPrice && oldPrice > 0) {
+                    discountPercent = ((oldPrice - currentPrice) / oldPrice) * 100;
+                }
+                
+                if (!id || !name || name === 'Product Name') {
+                    alert("Please fill in Product Name and Product ID.");
+                    return null;
+                }
+
+                // --- 1. Convert SVG Logo to Image ---
+                // Optimize: Pass target height (10mm) to avoid creating unnecessarily large canvas
+                let companyLogoDataUrl = null;
+                if (companyLogoSvg) {
+                    companyLogoDataUrl = await svgToCanvas(companyLogoSvg, 10);
+                }
+
+                // --- 2. Get QR Code from Preview (reuse existing instead of regenerating) ---
+                // The preview QR code is already generated and displayed, reuse it for better performance
+                const previewQrCanvas = document.getElementById('preview-qrcode-div')?.querySelector('canvas');
+                let qrcodeDataUrl = null;
+                
+                if (previewQrCanvas) {
+                    // Reuse existing QR code canvas from preview
+                    qrcodeDataUrl = previewQrCanvas.toDataURL('image/png');
+                } else {
+                    // Fallback: Generate QR code if preview doesn't exist
+                    document.getElementById('qrcode-div').innerHTML = '';
+                    new QRCode(document.getElementById('qrcode-div'), {
+                        text: id,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    const qrCanvas = document.getElementById('qrcode-div').querySelector('canvas');
+                    qrcodeDataUrl = qrCanvas.toDataURL('image/png');
+                }
+
+                // --- 2. Initialize jsPDF in Landscape ---
+                // Match the preview aspect ratio (5:3 = 1.67:1)
+                // Using standard thermal label size: 80mm x 48mm (close to 5:3 ratio)
+                const LABEL_WIDTH_MM = 80;  // Landscape width
+                const LABEL_HEIGHT_MM = 48; // Landscape height (5:3 ratio)
+
+                const doc = new jsPDF({
+                    unit: 'mm',
+                    format: [LABEL_WIDTH_MM, LABEL_HEIGHT_MM],
+                    orientation: 'landscape',
+                    compress: true
+                });
+
+                // Set all colors to black for black and white printing
+                doc.setTextColor(0, 0, 0);
+                doc.setDrawColor(0, 0, 0);
+
+                // --- 3. Calculate exact scaling to match HTML styling ---
+                // HTML ticket-label: max-width 900px (ticket-container), padding 15px, border 3px
+                // PDF: 80mm × 48mm
+                // To match visual appearance, we need to scale proportionally
+                
+                // Standard conversions:
+                // 1 inch = 25.4mm = 72pt = 96px
+                // So: 1px = 0.2646mm = 0.75pt
+                
+                // Scale factor: PDF width (80mm) relative to HTML container (900px)
+                // Assuming HTML renders at ~96 DPI: 900px ≈ 238mm
+                // But for visual matching, we'll use direct proportional scaling
+                const HTML_CONTAINER_WIDTH_PX = 900;
+                const SCALE_RATIO = LABEL_WIDTH_MM / HTML_CONTAINER_WIDTH_PX;
+                
+                // Font sizes: Match HTML exactly - maintain same visual proportions
+                // HTML: company 24px, product 20px, old price 26px, price 52px
+                // Using calibrated sizes that match visual appearance on 80mm label:
+                // Company: 24px → increased, use 8.4pt
+                // Product: 20px → increased to match company size, use 7pt
+                // Old Price: 26px → increased for better visibility, use 9.1pt
+                // Price: 52px → very large, increased to 22pt for better prominence
+                const COMPANY_FONT_SIZE_PT = 8.4; // Matches visual size of 24px bold (increased)
+                const PRODUCT_FONT_SIZE_PT = 7; // Matches visual size of 20px (same as company)
+                const OLD_PRICE_FONT_SIZE_PT = 9.1; // Increased from 7.7pt to match 26px
+                const PRICE_FONT_SIZE_PT = 22; // Matches visual size of 52px bold (increased for prominence)
+
+                // Padding and spacing (HTML: 15px padding, border 3px)
+                // Scale proportionally: 15px * scale_ratio * mm_per_px
+                const PADDING_MM = 15 * SCALE_RATIO * (25.4 / 96); // ≈ 3.5mm
+                const BORDER_WIDTH_MM = 3 * SCALE_RATIO * (25.4 / 96); // ≈ 0.7mm
+                
+                // QR Code size (HTML: 120px × 120px)
+                // Make it larger to match visual appearance - HTML QR code is quite prominent
+                // Using a larger size that matches the visual proportion better
+                const QR_SIZE_MM = 18; // Matches visual size of 120px QR code (larger for better visibility)
+
+                // --- 4. Add border to match HTML (3px solid black) ---
+                doc.setLineWidth(BORDER_WIDTH_MM);
+                doc.rect(PADDING_MM, PADDING_MM, LABEL_WIDTH_MM - (PADDING_MM * 2), LABEL_HEIGHT_MM - (PADDING_MM * 2));
+
+                // --- 5. Add Content to PDF (Matching HTML Layout Exactly) ---
+                
+                // Content area (inside padding and border)
+                const CONTENT_X = PADDING_MM + BORDER_WIDTH_MM;
+                const CONTENT_Y = PADDING_MM + BORDER_WIDTH_MM;
+                const CONTENT_WIDTH = LABEL_WIDTH_MM - (PADDING_MM * 2) - (BORDER_WIDTH_MM * 2);
+                const CONTENT_HEIGHT = LABEL_HEIGHT_MM - (PADDING_MM * 2) - (BORDER_WIDTH_MM * 2);
+                
+                // Calculate spacing to match HTML layout exactly
+                // HTML uses flexbox with justify-content: space-between
+                // Top: product name (centered, bigger)
+                // Middle: QR code with margin: 10px auto
+                // Bottom: company name (left) and price (right) aligned to bottom
+                
+                let yPos = CONTENT_Y + 3.5; // Start after top padding/border (matching HTML padding: 15px scaled)
+                
+                // Product Name (centered at top, matching HTML: 28px normal, centered, margin-bottom: 3px)
+                doc.setFont('helvetica', 'normal'); // Arial equivalent (helvetica is closest to Arial)
+                const PRODUCT_NAME_FONT_SIZE_PT = 9.8; // Matches visual size of 28px
+                doc.setFontSize(PRODUCT_NAME_FONT_SIZE_PT);
+                const nameParts = name.split('\n');
+                const nameLines = doc.splitTextToSize(name, CONTENT_WIDTH - 4);
+                const productNameTextY = yPos + (PRODUCT_NAME_FONT_SIZE_PT * 0.35);
+                doc.text(nameLines, CONTENT_X + (CONTENT_WIDTH / 2), productNameTextY, { align: 'center', maxWidth: CONTENT_WIDTH - 4 });
+                yPos = productNameTextY + (PRODUCT_NAME_FONT_SIZE_PT * 0.35 * nameLines.length) + 0.5; // Reduced padding after product name
+                
+                // QR Code (centered, matching HTML: 120px × 120px, margin: 10px auto)
+                const qrX = CONTENT_X + (CONTENT_WIDTH - QR_SIZE_MM) / 2;
+                doc.addImage(qrcodeDataUrl, 'PNG', qrX, yPos, QR_SIZE_MM, QR_SIZE_MM);
+                yPos += QR_SIZE_MM + 3; // Small margin between QR code and product ID
+                
+                // Product ID text below QR code (centered, matching HTML input)
+                if (id && id.trim()) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(4.9); // Increased font size to match HTML (14px scaled)
+                    doc.text(id.trim(), CONTENT_X + (CONTENT_WIDTH / 2), yPos, { align: 'center' });
+                    yPos += 3; // Space after product ID
+                }
+                
+                // Bottom section: Company Name (left) | Price (right)
+                // Match HTML layout with flexbox justify-content: space-between, align-items: flex-end
+                // HTML uses margin-top: auto to push content to bottom
+                const bottomMargin = 2; // Small margin from bottom edge
+                const bottomY = CONTENT_Y + CONTENT_HEIGHT - bottomMargin;
+                
+                // Company Logo (left, matching HTML SVG logo)
+                if (companyLogoDataUrl) {
+                    const logoHeight = 10; // Height in mm (matches HTML height of 40px scaled)
+                    const logoWidth = logoHeight * (1327 / 1327); // Maintain aspect ratio (square)
+                    doc.addImage(companyLogoDataUrl, 'PNG', CONTENT_X + 2, bottomY - logoHeight, logoWidth, logoHeight);
+                }
+                
+                // Current Price (right, matching HTML: 52px bold, right-aligned, line-height: 1)
+                const priceX = CONTENT_X + CONTENT_WIDTH - 2;
+                doc.setFont('helvetica', 'bold'); // Arial equivalent
+                doc.setFontSize(PRICE_FONT_SIZE_PT);
+                const priceText = currentPrice > 0 ? `${formatNumber(Math.round(currentPrice))} DZD` : '';
+                if (priceText) {
+                    doc.text(priceText, priceX, bottomY, { align: 'right' });
+                }
+                
+                // Old Price with strikethrough (if visible, positioned above current price, right-aligned)
+                if (showOldPrice && oldPrice > 0) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(OLD_PRICE_FONT_SIZE_PT);
+                    const oldPriceText = `${formatNumber(Math.round(oldPrice))} DZD`;
+                    // Position old price above current price - very close together
+                    // Position it just above the current price with minimal gap
+                    const oldPriceY = bottomY - (PRICE_FONT_SIZE_PT * 0.25) - (OLD_PRICE_FONT_SIZE_PT * 0.15);
+                    
+                    // Get text width before drawing text
+                    const textWidth = doc.getTextWidth(oldPriceText);
+                    
+                    // Draw the text first
+                    doc.text(oldPriceText, priceX, oldPriceY, { align: 'right' });
+                    
+                    // Draw strikethrough line - thin but visible
+                    // Calculate the start and end positions for right-aligned text
+                    const strikeStartX = priceX - textWidth - 0.3; // Start slightly before text
+                    const strikeEndX = priceX + 0.3; // End slightly after text (right edge)
+                    // Position strikethrough at the center of the text height
+                    // oldPriceY is the baseline, so we move up by approximately half the font size to center it
+                    const strikeY = oldPriceY - (OLD_PRICE_FONT_SIZE_PT * 0.14); // Centered in text
+                    
+                    doc.setLineWidth(0.3); // Thin line that doesn't obscure the text
+                    doc.setDrawColor(0, 0, 0); // Ensure black color
+                    doc.line(strikeStartX, strikeY, strikeEndX, strikeY);
+                }
+
+                return doc;
+            }
+
+            async function printTicket() {
+                const doc = await generatePDF();
+                if (!doc) return;
+                
+                // Open PDF in new window and trigger print dialog
+                const pdfBlob = doc.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                const printWindow = window.open(pdfUrl);
+                
+                printWindow.onload = function() {
+                    setTimeout(() => {
+                        printWindow.print();
+                        // Clean up the URL after a delay
+                        setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+                    }, 250);
+                };
+            }
+
+            async function downloadTicket() {
+                const doc = await generatePDF();
+                if (!doc) return;
+                
+                const name = document.getElementById('ticket-product-name').textContent.trim();
+                doc.save(`${name.replace(/[^a-z0-9]/gi, '_')}_ticket.pdf`);
+            }
+            
+            // Make functions globally accessible for onclick handlers
+            window.printTicket = printTicket;
+            window.downloadTicket = downloadTicket;
+        } // End of initApp function
+
+    </script>
+</body>
+</html>
