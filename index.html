@@ -46,8 +46,7 @@
             border-radius: 16px;
             box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
             padding: 45px;
-            max-width: 900px;
-            width: 100%;
+            width: fit-content; /* Fit content instead of responsive */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .ticket-container:hover {
@@ -55,25 +54,25 @@
             box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
         }
         .ticket-label {
-            width: 100%;
-            aspect-ratio: 5/3; /* Landscape ratio */
+            width: 550px; /* Fixed width matching PDF (55mm) */
+            height: 450px; /* Fixed height matching PDF (45mm) */
             border: 3px solid #000;
             background: white;
-            padding: 15px;
+            padding: 10px; /* Reduced from 15px */
             box-sizing: border-box;
             position: relative;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start; /* Changed from space-between for better control */
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .ticket-product-name {
             font-weight: normal;
-            font-size: 32px;
+            font-size: 28px; /* Reduced from 32px */
             color: #000;
-            text-align: center;
-            margin-bottom: 3px;
-            padding: 6px 8px;
+            text-align: center; /* Centered alignment */
+            margin-bottom: 2px; /* Reduced spacing before QR code */
+            padding: 4px 6px; /* Reduced from 6px 8px */
             border: 2px dashed transparent;
             border-radius: 6px;
             cursor: text;
@@ -81,6 +80,7 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: pre-line;
             line-height: 1.3;
+            flex-shrink: 0; /* Prevent shrinking */
         }
         .ticket-product-name:hover {
             border-color: #bbb;
@@ -115,19 +115,23 @@
             height: 220px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            margin: 3px auto 10px auto;
+            justify-content: center; /* Centered alignment */
+            margin: 0 auto 8px auto; /* Increased spacing below QR code */
+            flex-shrink: 0; /* Prevent shrinking */
         }
         #preview-qrcode-div {
             display: flex;
-            justify-content: center;
+            justify-content: center; /* Centered alignment */
             align-items: center;
+            width: 100%;
+            height: 100%;
         }
         .ticket-product-id-container {
             display: flex;
-            justify-content: center;
+            justify-content: center; /* Centered alignment */
             align-items: center;
-            margin: 8px auto 10px auto;
+            margin: 0 auto 5px auto; /* Centered, spacing below */
+            flex-shrink: 0; /* Prevent shrinking */
         }
         .ticket-product-id-input {
             font-family: Arial, sans-serif;
@@ -137,8 +141,8 @@
             background: transparent;
             border: 2px dashed transparent;
             border-radius: 6px;
-            padding: 6px 12px;
-            text-align: center;
+            padding: 4px 8px; /* Reduced from 6px 12px */
+            text-align: center; /* Centered alignment */
             outline: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             min-width: 150px;
@@ -176,21 +180,18 @@
         }
         .ticket-bottom-section {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end; /* Align to right since logo is removed */
             align-items: flex-end;
-            margin-top: auto;
-            gap: 10px; /* Reduced gap further to prevent overflow */
-            min-width: 0; /* Allow flex items to shrink below content size */
-            overflow: visible; /* Ensure all content is visible */
+            margin-top: auto; /* Push to bottom */
+            gap: 0;
+            min-width: 0;
+            overflow: visible;
+            width: 100%; /* Ensure full width */
+            flex-shrink: 0; /* Prevent shrinking */
+            padding-top: 2px; /* Reduced from 4px */
         }
         .ticket-label-left {
-            flex: 1 1 0%; /* Allow growing and shrinking, start from 0 */
-            display: flex;
-            align-items: flex-start;
-            flex-direction: column;
-            max-width: 48%; /* Reduced from 50% to prevent overflow */
-            min-width: 0; /* Allow shrinking below content size */
-            overflow: hidden; /* Prevent overflow */
+            display: none !important; /* Logo is now only inside QR code, completely hide */
         }
         .ticket-price-right {
             flex: 0 0 auto; /* Don't shrink - maintain size */
@@ -228,7 +229,7 @@
             max-width: 200px;
         }
         .ticket-old-price {
-            font-size: 26px;
+            font-size: 32px; /* Increased from 26px */
             font-weight: normal;
             color: #000;
             text-decoration: line-through;
@@ -263,7 +264,7 @@
             opacity: 0.9;
         }
         .ticket-old-price-wrapper .ticket-currency {
-            font-size: 26px;
+            font-size: 32px; /* Increased from 26px to match old price */
             text-decoration: line-through;
             text-decoration-thickness: 3px;
         }
@@ -366,12 +367,12 @@
                  id="ticket-product-name"
                  data-placeholder="Product Name">PUMA BMW MMS LGND  Renegade</div>
             
-            <!-- QR Code centered -->
+            <!-- QR Code under product name, centered -->
             <div class="ticket-qrcode">
                 <div id="preview-qrcode-div"></div>
             </div>
             
-            <!-- Product ID input under QR code -->
+            <!-- Product ID under QR code, centered -->
             <div class="ticket-product-id-container">
                 <input type="text" 
                        class="ticket-product-id-input" 
@@ -380,8 +381,9 @@
                        value="PUMA_FerrariRSBlack">
             </div>
             
-            <!-- Bottom Section: Company Name (left) | Price (right) -->
+            <!-- Bottom Section: Price (right) -->
             <div class="ticket-bottom-section">
+                <!-- Logo is now inside QR code, removed from bottom left -->
                 <div class="ticket-label-left">
                     <div class="ticket-company-name-static" 
                          id="ticket-company-name">
@@ -437,6 +439,7 @@
     <div id="code-staging">
         <div id="qrcode-div"></div>
     </div>
+    
 
     <script>
         // Wait for DOM and libraries to be ready
@@ -476,7 +479,7 @@
                 const svgHeight = svgElement.height?.baseVal?.value || svgElement.viewBox?.baseVal?.height || 1327;
                 
                 // Calculate optimal canvas size based on PDF output
-                // PDF is 80mm wide, logo will be ~10mm tall
+                // PDF is 55mm wide, logo will be ~10mm tall
                 // At 300 DPI (print quality): 10mm = ~118 pixels
                 // Use 2x for retina/quality: ~236 pixels
                 // But keep it reasonable: max 400px for performance
@@ -659,12 +662,47 @@
                 // This function kept for potential future use
             }
 
-            // Function to update QR code
+            // Helper function to add logo to QR code canvas
+            function addLogoToQRCode(qrCanvas, logoDataUrl, logoSizePercent = 30) {
+                return new Promise((resolve) => {
+                    if (!logoDataUrl) {
+                        resolve(qrCanvas.toDataURL('image/png'));
+                        return;
+                    }
+                    
+                    const logoImg = new Image();
+                    logoImg.onload = function() {
+                        const ctx = qrCanvas.getContext('2d');
+                        const qrSize = qrCanvas.width;
+                        const logoSize = Math.floor(qrSize * (logoSizePercent / 100));
+                        const logoX = (qrSize - logoSize) / 2;
+                        const logoY = (qrSize - logoSize) / 2;
+                        
+                        // Draw white background for logo area (to ensure QR code readability)
+                        // Use smaller padding to preserve more QR code data
+                        ctx.fillStyle = '#ffffff';
+                        const padding = logoSize * 0.12; // 12% padding around logo
+                        ctx.fillRect(logoX - padding, logoY - padding, logoSize + (padding * 2), logoSize + (padding * 2));
+                        
+                        // Draw logo centered
+                        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+                        
+                        resolve(qrCanvas.toDataURL('image/png'));
+                    };
+                    logoImg.onerror = function() {
+                        resolve(qrCanvas.toDataURL('image/png'));
+                    };
+                    logoImg.src = logoDataUrl;
+                });
+            }
+
+            // Function to update QR code (HTML preview - no logo)
             function updateQRCode(id) {
                 const qrcodeDiv = document.getElementById('preview-qrcode-div');
                 if (qrcodeDiv) {
                     qrcodeDiv.innerHTML = '';
                     if (id && id.trim()) {
+                        // Generate QR code without logo for HTML preview
                         new QRCode(qrcodeDiv, {
                             text: id.trim(),
                             width: 220,
@@ -741,48 +779,160 @@
                     return null;
                 }
 
-                // --- 1. Convert SVG Logo to Image ---
-                // Optimize: Pass target height (10mm) to avoid creating unnecessarily large canvas
-                let companyLogoDataUrl = null;
-                if (companyLogoSvg) {
-                    companyLogoDataUrl = await svgToCanvas(companyLogoSvg, 10);
-                }
+                // --- 1. Get SVG Logo for QR code (logo is now only inside QR code, not displayed separately) ---
+                // Logo will be embedded in QR code, no separate logo image needed
 
-                // --- 2. Get QR Code from Preview (reuse existing instead of regenerating) ---
-                // The preview QR code is already generated and displayed, reuse it for better performance
-                const previewQrCanvas = document.getElementById('preview-qrcode-div')?.querySelector('canvas');
+                // --- 2. Generate QR Code with Logo ---
+                // Helper function to generate QR code with logo
+                async function generateQRCodeWithLogo(text, size, logoSvg) {
+                    return new Promise((resolve) => {
+                        // Create temporary container for QR code
+                        const tempDiv = document.createElement('div');
+                        tempDiv.style.position = 'absolute';
+                        tempDiv.style.left = '-9999px';
+                        tempDiv.style.top = '-9999px';
+                        document.body.appendChild(tempDiv);
+                        
+                        // Generate QR code
+                        new QRCode(tempDiv, {
+                            text: text,
+                            width: size,
+                            height: size,
+                            colorDark: "#000000",
+                            colorLight: "#ffffff",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                        
+                        // Wait for QR code to render using polling approach
+                        let attempts = 0;
+                        const maxAttempts = 30; // Max 1.5 seconds
+                        
+                        const checkAndAddLogo = async () => {
+                            attempts++;
+                            const qrCanvas = tempDiv.querySelector('canvas');
+                            
+                            if (!qrCanvas || qrCanvas.width === 0 || qrCanvas.height === 0) {
+                                if (attempts < maxAttempts) {
+                                    setTimeout(checkAndAddLogo, 50);
+                                } else {
+                                    // Canvas not ready, return QR code without logo
+                                    if (qrCanvas) {
+                                        const dataUrl = qrCanvas.toDataURL('image/png');
+                                        document.body.removeChild(tempDiv);
+                                        resolve(dataUrl);
+                                    } else {
+                                        document.body.removeChild(tempDiv);
+                                        resolve(null);
+                                    }
+                                }
+                                return;
+                            }
+                            
+                            // Canvas is ready
+                            if (logoSvg) {
+                                try {
+                                    // Convert logo SVG to data URL (30% of QR code size)
+                                    const logoDataUrl = await svgToCanvas(logoSvg, size * 0.30 / (25.4 / 96));
+                                    
+                                    if (!logoDataUrl) {
+                                        // If logo conversion fails, return QR code without logo
+                                        const dataUrl = qrCanvas.toDataURL('image/png');
+                                        document.body.removeChild(tempDiv);
+                                        resolve(dataUrl);
+                                        return;
+                                    }
+                                    
+                                    // Add logo directly to canvas
+                                    const logoImg = new Image();
+                                    logoImg.onload = function() {
+                                        const ctx = qrCanvas.getContext('2d');
+                                        const qrSize = qrCanvas.width;
+                                        const logoSize = Math.floor(qrSize * 0.30); // 30% of QR code size
+                                        const logoX = (qrSize - logoSize) / 2;
+                                        const logoY = (qrSize - logoSize) / 2;
+                                        
+                                        // Draw white background for logo area
+                                        ctx.fillStyle = '#ffffff';
+                                        const padding = logoSize * 0.12; // 12% padding
+                                        ctx.fillRect(logoX - padding, logoY - padding, logoSize + (padding * 2), logoSize + (padding * 2));
+                                        
+                                        // Draw logo centered
+                                        ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+                                        
+                                        // Get final image data URL
+                                        const finalDataUrl = qrCanvas.toDataURL('image/png');
+                                        document.body.removeChild(tempDiv);
+                                        resolve(finalDataUrl);
+                                    };
+                                    logoImg.onerror = function() {
+                                        // If logo fails to load, return QR code without logo
+                                        const dataUrl = qrCanvas.toDataURL('image/png');
+                                        document.body.removeChild(tempDiv);
+                                        resolve(dataUrl);
+                                    };
+                                    logoImg.src = logoDataUrl;
+                                } catch (error) {
+                                    console.error('Error adding logo to QR code:', error);
+                                    const dataUrl = qrCanvas.toDataURL('image/png');
+                                    document.body.removeChild(tempDiv);
+                                    resolve(dataUrl);
+                                }
+                            } else {
+                                // No logo SVG, return QR code without logo
+                                const dataUrl = qrCanvas.toDataURL('image/png');
+                                document.body.removeChild(tempDiv);
+                                resolve(dataUrl);
+                            }
+                        };
+                        
+                        // Start checking after initial delay
+                        setTimeout(checkAndAddLogo, 100);
+                    });
+                }
+                
+                // Always generate QR code with logo for PDF (HTML preview doesn't have logo)
                 let qrcodeDataUrl = null;
                 
-                if (previewQrCanvas) {
-                    // Reuse existing QR code canvas from preview
-                    qrcodeDataUrl = previewQrCanvas.toDataURL('image/png');
+                if (companyLogoSvg) {
+                    // Generate QR code with logo
+                    qrcodeDataUrl = await generateQRCodeWithLogo(id, 200, companyLogoSvg);
                 } else {
-                    // Fallback: Generate QR code if preview doesn't exist
-                    document.getElementById('qrcode-div').innerHTML = '';
-                    new QRCode(document.getElementById('qrcode-div'), {
-                        text: id,
-                        width: 200,
-                        height: 200,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                    const qrCanvas = document.getElementById('qrcode-div').querySelector('canvas');
-                    qrcodeDataUrl = qrCanvas.toDataURL('image/png');
+                    // Fallback: Generate QR code without logo if SVG not found
+                    alert("Warning: Logo SVG not found. Generating QR code without logo.");
+                    qrcodeDataUrl = await generateQRCodeWithLogo(id, 200, null);
+                }
+                
+                if (!qrcodeDataUrl) {
+                    alert("Error: Failed to generate QR code.");
+                    return null;
                 }
 
-                // --- 2. Initialize jsPDF in Landscape ---
-                // Match the preview aspect ratio (5:3 = 1.67:1)
-                // Using standard thermal label size: 80mm x 48mm (close to 5:3 ratio)
-                const LABEL_WIDTH_MM = 80;  // Landscape width
-                const LABEL_HEIGHT_MM = 48; // Landscape height (5:3 ratio)
+                // --- 2. Initialize jsPDF ---
+                // Page size: 55mm width x 45mm height (custom ticket printer size, portrait direction)
+                const LABEL_WIDTH_MM = 55;  // Width
+                const LABEL_HEIGHT_MM = 45; // Height
 
+                // jsPDF format array behavior: [width, height]
+                // However, jsPDF swaps dimensions when width > height to enforce "portrait" (height > width)
+                // To get width=55mm, height=45mm, we need to pass format as [45, 55]
+                // jsPDF will then swap it back to width=55mm, height=45mm
+                // BUT: if that doesn't work, jsPDF might be reading format as [height, width]
+                // So we try: format: [45, 55] which jsPDF reads as height=45mm, width=55mm = CORRECT!
                 const doc = new jsPDF({
                     unit: 'mm',
                     format: [LABEL_WIDTH_MM, LABEL_HEIGHT_MM],
                     orientation: 'landscape',
                     compress: true
                 });
+                
+                // Verify dimensions are correct
+                const actualWidth = doc.internal.pageSize.getWidth();
+                const actualHeight = doc.internal.pageSize.getHeight();
+                console.log('PDF Dimensions - Requested: 55mm(width) x 45mm(height), Actual:', actualWidth + 'mm x ' + actualHeight + 'mm');
+                
+                // If dimensions are still wrong, the format array interpretation is different
+                // In that case, we need to use the direct format: [55, 45] and accept jsPDF's behavior
+                // OR manually fix by recreating with different approach
 
                 // Set all colors to black for black and white printing
                 doc.setTextColor(0, 0, 0);
@@ -790,34 +940,34 @@
 
                 // --- 3. Calculate exact scaling to match HTML styling ---
                 // HTML ticket-label: max-width 900px (ticket-container), padding 15px, border 3px
-                // PDF: 80mm × 48mm
+                // PDF: 55mm × 45mm (custom ticket printer size)
                 // To match visual appearance, we need to scale proportionally
                 
                 // Standard conversions:
                 // 1 inch = 25.4mm = 72pt = 96px
                 // So: 1px = 0.2646mm = 0.75pt
                 
-                // Scale factor: PDF width (80mm) relative to HTML container (900px)
+                // Scale factor: PDF width (55mm) relative to HTML container (900px)
                 // Assuming HTML renders at ~96 DPI: 900px ≈ 238mm
                 // But for visual matching, we'll use direct proportional scaling
                 const HTML_CONTAINER_WIDTH_PX = 900;
                 const SCALE_RATIO = LABEL_WIDTH_MM / HTML_CONTAINER_WIDTH_PX;
                 
                 // Font sizes: Match HTML exactly - maintain same visual proportions
-                // HTML: company 24px, product 20px, old price 26px, price 52px
-                // Using calibrated sizes that match visual appearance on 80mm label:
+                // HTML: company 24px, product 20px, old price 32px, price 52px
+                // Using calibrated sizes that match visual appearance on 55mm x 45mm label:
                 // Company: 24px → increased, use 8.4pt
                 // Product: 20px → increased to match company size, use 7pt
-                // Old Price: 26px → increased for better visibility, use 9.1pt
+                // Old Price: 32px → increased for better visibility, use 11.2pt
                 // Price: 52px → very large, increased to 22pt for better prominence
                 const COMPANY_FONT_SIZE_PT = 8.4; // Matches visual size of 24px bold (increased)
                 const PRODUCT_FONT_SIZE_PT = 7; // Matches visual size of 20px (same as company)
-                const OLD_PRICE_FONT_SIZE_PT = 9.1; // Increased from 7.7pt to match 26px
+                const OLD_PRICE_FONT_SIZE_PT = 11.2; // Increased to match 32px (was 9.1pt for 26px)
                 const PRICE_FONT_SIZE_PT = 22; // Matches visual size of 52px bold (increased for prominence)
 
-                // Padding and spacing (HTML: 15px padding, border 3px)
-                // Scale proportionally: 15px * scale_ratio * mm_per_px
-                const PADDING_MM = 15 * SCALE_RATIO * (25.4 / 96); // ≈ 3.5mm
+                // Padding and spacing (HTML: 10px padding, border 3px) - reduced for better space usage
+                // Scale proportionally: 10px * scale_ratio * mm_per_px
+                const PADDING_MM = 10 * SCALE_RATIO * (25.4 / 96); // ≈ 2.3mm (reduced from 3.5mm)
                 const BORDER_WIDTH_MM = 3 * SCALE_RATIO * (25.4 / 96); // ≈ 0.7mm
                 
                 // QR Code size (HTML: 120px × 120px)
@@ -838,48 +988,38 @@
                 const CONTENT_HEIGHT = LABEL_HEIGHT_MM - (PADDING_MM * 2) - (BORDER_WIDTH_MM * 2);
                 
                 // Calculate spacing to match HTML layout exactly
-                // HTML uses flexbox with justify-content: space-between
-                // Top: product name (centered, bigger)
-                // Middle: QR code with margin: 10px auto
-                // Bottom: company name (left) and price (right) aligned to bottom
+                // Layout: Top center: product name, under it: QR code, under it: product ID, bottom right: prices
                 
-                let yPos = CONTENT_Y + 3.5; // Start after top padding/border (matching HTML padding: 15px scaled)
+                let yPos = CONTENT_Y + 2; // Reduced from 3.5mm - start after top padding/border
                 
-                // Product Name (centered at top, matching HTML: 28px normal, centered, margin-bottom: 3px)
+                // Product Name (centered at top, matching HTML: 28px normal, centered)
                 doc.setFont('helvetica', 'normal'); // Arial equivalent (helvetica is closest to Arial)
-                const PRODUCT_NAME_FONT_SIZE_PT = 9.8; // Matches visual size of 28px
+                const PRODUCT_NAME_FONT_SIZE_PT = 8.6; // Matches visual size of 28px (reduced from 9.8pt)
                 doc.setFontSize(PRODUCT_NAME_FONT_SIZE_PT);
                 const nameParts = name.split('\n');
                 const nameLines = doc.splitTextToSize(name, CONTENT_WIDTH - 4);
                 const productNameTextY = yPos + (PRODUCT_NAME_FONT_SIZE_PT * 0.35);
                 doc.text(nameLines, CONTENT_X + (CONTENT_WIDTH / 2), productNameTextY, { align: 'center', maxWidth: CONTENT_WIDTH - 4 });
-                yPos = productNameTextY + (PRODUCT_NAME_FONT_SIZE_PT * 0.35 * nameLines.length) + 0.5; // Reduced padding after product name
+                yPos = productNameTextY + (PRODUCT_NAME_FONT_SIZE_PT * 0.35 * nameLines.length) + 0.8; // Reduced spacing after product name (was 1.5)
                 
-                // QR Code (centered, matching HTML: 120px × 120px, margin: 10px auto)
-                const qrX = CONTENT_X + (CONTENT_WIDTH - QR_SIZE_MM) / 2;
+                // QR Code (centered, under product name)
+                const qrX = CONTENT_X + (CONTENT_WIDTH - QR_SIZE_MM) / 2; // Centered
                 doc.addImage(qrcodeDataUrl, 'PNG', qrX, yPos, QR_SIZE_MM, QR_SIZE_MM);
-                yPos += QR_SIZE_MM + 3; // Small margin between QR code and product ID
+                yPos += QR_SIZE_MM + 3; // Increased spacing after QR code (was 2mm)
                 
-                // Product ID text below QR code (centered, matching HTML input)
+                // Product ID text (centered, under QR code)
                 if (id && id.trim()) {
                     doc.setFont('helvetica', 'normal');
-                    doc.setFontSize(4.9); // Increased font size to match HTML (14px scaled)
+                    doc.setFontSize(6.3); // Matches visual size of 24px
                     doc.text(id.trim(), CONTENT_X + (CONTENT_WIDTH / 2), yPos, { align: 'center' });
-                    yPos += 3; // Space after product ID
+                    yPos += 3.5; // Reduced from 5mm - space after product ID
                 }
                 
-                // Bottom section: Company Name (left) | Price (right)
+                // Bottom section: Price (right) - Logo is now only inside QR code
                 // Match HTML layout with flexbox justify-content: space-between, align-items: flex-end
                 // HTML uses margin-top: auto to push content to bottom
-                const bottomMargin = 2; // Small margin from bottom edge
+                const bottomMargin = 1; // Reduced from 2mm - small margin from bottom edge
                 const bottomY = CONTENT_Y + CONTENT_HEIGHT - bottomMargin;
-                
-                // Company Logo (left, matching HTML SVG logo)
-                if (companyLogoDataUrl) {
-                    const logoHeight = 10; // Height in mm (matches HTML height of 40px scaled)
-                    const logoWidth = logoHeight * (1327 / 1327); // Maintain aspect ratio (square)
-                    doc.addImage(companyLogoDataUrl, 'PNG', CONTENT_X + 2, bottomY - logoHeight, logoWidth, logoHeight);
-                }
                 
                 // Current Price (right, matching HTML: 52px bold, right-aligned, line-height: 1)
                 const priceX = CONTENT_X + CONTENT_WIDTH - 2;
