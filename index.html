@@ -54,7 +54,7 @@
             box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
         }
         .ticket-label {
-            width: 550px; /* Fixed width matching PDF (55mm) */
+            width: 450px; /* Fixed width matching PDF (45mm) */
             height: 450px; /* Fixed height matching PDF (45mm) */
             border: 3px solid #000;
             background: white;
@@ -185,7 +185,7 @@
             margin-top: auto; /* Push to bottom */
             gap: 0;
             min-width: 0;
-            overflow: visible;
+            overflow: hidden; /* Prevent overflow */
             width: 100%; /* Ensure full width */
             flex-shrink: 0; /* Prevent shrinking */
             padding-top: 2px; /* Reduced from 4px */
@@ -200,8 +200,10 @@
             justify-content: flex-end;
             align-items: flex-end;
             gap: 0px; /* No gap - prices are very close */
-            min-width: fit-content; /* Ensure it fits its content */
-            overflow: visible; /* Ensure both prices are visible */
+            min-width: 0; /* Allow shrinking */
+            max-width: calc(100% - 10px); /* Prevent overflow, leave some margin */
+            overflow: hidden; /* Prevent overflow */
+            padding-right: 5px; /* Add small padding from right edge */
         }
         .ticket-old-price-wrapper,
         .ticket-current-price-wrapper {
@@ -209,6 +211,9 @@
             align-items: baseline;
             justify-content: flex-end;
             gap: 4px;
+            min-width: 0; /* Allow shrinking */
+            max-width: 100%; /* Prevent overflow */
+            overflow: hidden; /* Prevent overflow */
         }
         .ticket-old-price-wrapper.hidden {
             display: none !important;
@@ -226,17 +231,18 @@
             text-align: right;
             white-space: nowrap;
             min-width: 60px;
-            max-width: 200px;
+            max-width: 100%; /* Allow to use available space */
+            overflow: hidden; /* Prevent text overflow */
         }
         .ticket-old-price {
-            font-size: 32px; /* Increased from 26px */
+            font-size: 26px;
             font-weight: normal;
             color: #000;
             text-decoration: line-through;
             text-decoration-thickness: 3px;
         }
         .ticket-current-price {
-            font-size: 52px;
+            font-size: 42px; /* Reduced from 52px to fit smaller container */
             font-weight: bold;
             color: #000;
             line-height: 1;
@@ -264,12 +270,12 @@
             opacity: 0.9;
         }
         .ticket-old-price-wrapper .ticket-currency {
-            font-size: 32px; /* Increased from 26px to match old price */
+            font-size: 26px;
             text-decoration: line-through;
             text-decoration-thickness: 3px;
         }
         .ticket-current-price-wrapper .ticket-currency {
-            font-size: 52px;
+            font-size: 42px; /* Reduced from 52px to match price */
             font-weight: bold;
         }
         .ticket-discount {
@@ -908,27 +914,24 @@
                 }
 
                 // --- 2. Initialize jsPDF ---
-                // Page size: 55mm width x 45mm height (custom ticket printer size, portrait direction)
-                const LABEL_WIDTH_MM = 55;  // Width
+                // Page size: 45mm width x 45mm height (custom ticket printer size, portrait direction)
+                const LABEL_WIDTH_MM = 45;  // Width
                 const LABEL_HEIGHT_MM = 45; // Height
 
-                // jsPDF format array behavior: [width, height]
-                // However, jsPDF swaps dimensions when width > height to enforce "portrait" (height > width)
-                // To get width=55mm, height=45mm, we need to pass format as [45, 55]
-                // jsPDF will then swap it back to width=55mm, height=45mm
-                // BUT: if that doesn't work, jsPDF might be reading format as [height, width]
-                // So we try: format: [45, 55] which jsPDF reads as height=45mm, width=55mm = CORRECT!
+                // jsPDF format array: [width, height]
+                // For square format (45mm x 45mm), we use format: [45, 45]
+                // Explicitly set orientation to 'portrait' to ensure correct orientation
                 const doc = new jsPDF({
                     unit: 'mm',
                     format: [LABEL_WIDTH_MM, LABEL_HEIGHT_MM],
-                    orientation: 'landscape',
+                    orientation: 'portrait',
                     compress: true
                 });
                 
                 // Verify dimensions are correct
                 const actualWidth = doc.internal.pageSize.getWidth();
                 const actualHeight = doc.internal.pageSize.getHeight();
-                console.log('PDF Dimensions - Requested: 55mm(width) x 45mm(height), Actual:', actualWidth + 'mm x ' + actualHeight + 'mm');
+                console.log('PDF Dimensions - Requested: 45mm(width) x 45mm(height), Actual:', actualWidth + 'mm x ' + actualHeight + 'mm');
                 
                 // If dimensions are still wrong, the format array interpretation is different
                 // In that case, we need to use the direct format: [55, 45] and accept jsPDF's behavior
@@ -940,29 +943,29 @@
 
                 // --- 3. Calculate exact scaling to match HTML styling ---
                 // HTML ticket-label: max-width 900px (ticket-container), padding 15px, border 3px
-                // PDF: 55mm × 45mm (custom ticket printer size)
+                // PDF: 45mm × 45mm (custom ticket printer size)
                 // To match visual appearance, we need to scale proportionally
                 
                 // Standard conversions:
                 // 1 inch = 25.4mm = 72pt = 96px
                 // So: 1px = 0.2646mm = 0.75pt
                 
-                // Scale factor: PDF width (55mm) relative to HTML container (900px)
+                // Scale factor: PDF width (45mm) relative to HTML container (900px)
                 // Assuming HTML renders at ~96 DPI: 900px ≈ 238mm
                 // But for visual matching, we'll use direct proportional scaling
                 const HTML_CONTAINER_WIDTH_PX = 900;
                 const SCALE_RATIO = LABEL_WIDTH_MM / HTML_CONTAINER_WIDTH_PX;
                 
                 // Font sizes: Match HTML exactly - maintain same visual proportions
-                // HTML: company 24px, product 20px, old price 32px, price 52px
-                // Using calibrated sizes that match visual appearance on 55mm x 45mm label:
+                // HTML: company 24px, product 20px, old price 26px, price 52px
+                // Using calibrated sizes that match visual appearance on 45mm x 45mm label:
                 // Company: 24px → increased, use 8.4pt
                 // Product: 20px → increased to match company size, use 7pt
-                // Old Price: 32px → increased for better visibility, use 11.2pt
+                // Old Price: 26px → increased for better visibility, use 9.1pt
                 // Price: 52px → very large, increased to 22pt for better prominence
                 const COMPANY_FONT_SIZE_PT = 8.4; // Matches visual size of 24px bold (increased)
                 const PRODUCT_FONT_SIZE_PT = 7; // Matches visual size of 20px (same as company)
-                const OLD_PRICE_FONT_SIZE_PT = 11.2; // Increased to match 32px (was 9.1pt for 26px)
+                const OLD_PRICE_FONT_SIZE_PT = 9.1; // Increased from 7.7pt to match 26px
                 const PRICE_FONT_SIZE_PT = 22; // Matches visual size of 52px bold (increased for prominence)
 
                 // Padding and spacing (HTML: 10px padding, border 3px) - reduced for better space usage
