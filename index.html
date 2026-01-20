@@ -8,6 +8,7 @@
     <!-- CDN Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         /* CSS for immersive ticket editing experience */
@@ -356,6 +357,163 @@
         #code-staging canvas {
             display: block;
         }
+
+        /* Bulk upload styles */
+        .bulk-section {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.15);
+            padding: 30px;
+            margin-bottom: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+        .bulk-section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 24px;
+        }
+        .instructions-box {
+            background: #f8f9fa;
+            border-left: 4px solid #4a90e2;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .instructions-box h3 {
+            margin-top: 0;
+            color: #4a90e2;
+            font-size: 18px;
+        }
+        .instructions-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .instructions-box li {
+            margin: 8px 0;
+            color: #555;
+        }
+        .instructions-box code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+        .file-upload-area {
+            border: 2px dashed #4a90e2;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            background: #f0f7ff;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload-area:hover {
+            background: #e0efff;
+            border-color: #357abd;
+        }
+        .file-upload-area.dragover {
+            background: #d0e7ff;
+            border-color: #357abd;
+        }
+        .file-input {
+            display: none;
+        }
+        .file-upload-label {
+            display: block;
+            cursor: pointer;
+            color: #4a90e2;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .file-upload-label:hover {
+            color: #357abd;
+        }
+        .bulk-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .bulk-button {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            max-width: 250px;
+        }
+        .bulk-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .bulk-print-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .bulk-print-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+        .bulk-download-button {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        }
+        .bulk-download-button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(17, 153, 142, 0.5);
+        }
+        .file-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        .error-message {
+            margin-top: 15px;
+            padding: 15px;
+            background: #ffebee;
+            border-radius: 8px;
+            color: #c62828;
+            font-weight: 500;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        .tab-button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            background: #e0e0e0;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -364,6 +522,14 @@
         <h1>📦 Product Ticket Printer</h1>
         <p>Edit your ticket below, then click Print</p>
     </div>
+
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('single')">Single Ticket</button>
+        <button class="tab-button" onclick="switchTab('bulk')">Bulk Import</button>
+    </div>
+
+    <!-- Single Ticket Tab -->
+    <div id="single-tab" class="tab-content active">
 
     <div class="ticket-container">
         <div class="ticket-label" id="ticket-label">
@@ -433,6 +599,61 @@
         <div class="print-button-container">
             <button class="print-button" onclick="printTicket()">🖨️ Print Directly</button>
             <button class="download-button" onclick="downloadTicket()">💾 Download PDF</button>
+        </div>
+    </div>
+    </div>
+
+    <!-- Bulk Import Tab -->
+    <div id="bulk-tab" class="tab-content">
+        <div class="bulk-section">
+            <h2>📊 Bulk Import from CSV/Excel</h2>
+            
+            <div class="instructions-box">
+                <h3>📋 File Format Instructions</h3>
+                <p><strong>Your CSV or Excel file must have the following columns (headers):</strong></p>
+                <ul>
+                    <li><code>Product Name</code> - The name of the product (required)</li>
+                    <li><code>Product ID</code> - Unique identifier for the product, used in QR code (required)</li>
+                    <li><code>Current Price</code> - Current selling price in DZD (required, numbers only)</li>
+                    <li><code>Old Price</code> - Original price before discount (optional, numbers only)</li>
+                </ul>
+                <p><strong>Example CSV format:</strong></p>
+                <pre style="background: #fff; padding: 15px; border-radius: 6px; overflow-x: auto; margin: 10px 0;"><code>Product Name,Product ID,Current Price,Old Price
+PUMA BMW MMS LGND Renegade,PUMA_FerrariRSBlack,18950,21500
+Nike Air Max 90,NIKE_AM90_001,25000,30000
+Adidas Ultraboost,ADIDAS_UB_2024,35000,</code></pre>
+                <p><strong>Notes:</strong></p>
+                <ul>
+                    <li>Headers are case-insensitive (e.g., "product name" = "Product Name")</li>
+                    <li>Empty rows will be skipped</li>
+                    <li>If Old Price is empty or less than Current Price, it won't be displayed</li>
+                    <li>Prices should be numbers only (no currency symbols or commas)</li>
+                    <li>CSV files should use comma (,) as delimiter</li>
+                    <li>Excel files (.xlsx, .xls) are also supported</li>
+                </ul>
+            </div>
+
+            <div class="file-upload-area" id="file-upload-area" onclick="document.getElementById('bulk-file-input').click()">
+                <input type="file" id="bulk-file-input" class="file-input" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(event)">
+                <label for="bulk-file-input" class="file-upload-label">
+                    📁 Click here or drag and drop your CSV/Excel file
+                </label>
+                <p style="margin-top: 10px; color: #666; font-size: 14px;">
+                    Supported formats: CSV, Excel (.xlsx, .xls)
+                </p>
+            </div>
+
+            <div id="file-info" class="file-info hidden"></div>
+            <div id="file-error" class="error-message hidden"></div>
+
+            <div class="bulk-buttons">
+                <button class="bulk-button bulk-print-button" id="bulk-print-btn" onclick="bulkPrintTickets()" disabled>
+                    🖨️ Print All Tickets
+                </button>
+                <button class="bulk-button bulk-download-button" id="bulk-download-btn" onclick="bulkDownloadTickets()" disabled>
+                    💾 Download PDF
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1093,6 +1314,483 @@
             // Make functions globally accessible for onclick handlers
             window.printTicket = printTicket;
             window.downloadTicket = downloadTicket;
+
+            // --- Bulk Import Functions ---
+            let bulkProducts = [];
+
+            // Tab switching
+            window.switchTab = function(tab) {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                if (tab === 'single') {
+                    document.querySelector('.tab-button:first-child').classList.add('active');
+                    document.getElementById('single-tab').classList.add('active');
+                } else {
+                    document.querySelector('.tab-button:last-child').classList.add('active');
+                    document.getElementById('bulk-tab').classList.add('active');
+                }
+            };
+
+            // File handling
+            window.handleFileSelect = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const fileInfo = document.getElementById('file-info');
+                const fileError = document.getElementById('file-error');
+                const bulkPrintBtn = document.getElementById('bulk-print-btn');
+                const bulkDownloadBtn = document.getElementById('bulk-download-btn');
+
+                fileInfo.classList.add('hidden');
+                fileError.classList.add('hidden');
+                bulkPrintBtn.disabled = true;
+                bulkDownloadBtn.disabled = true;
+
+                const fileName = file.name.toLowerCase();
+                
+                if (fileName.endsWith('.csv')) {
+                    parseCSV(file);
+                } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                    parseExcel(file);
+                } else {
+                    showError('Unsupported file format. Please use CSV or Excel files.');
+                }
+            };
+
+            // Drag and drop handlers
+            const fileUploadArea = document.getElementById('file-upload-area');
+            const fileInput = document.getElementById('bulk-file-input');
+
+            fileUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadArea.classList.add('dragover');
+            });
+
+            fileUploadArea.addEventListener('dragleave', () => {
+                fileUploadArea.classList.remove('dragover');
+            });
+
+            fileUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFileSelect({ target: { files: files } });
+                }
+            });
+
+            function parseCSV(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const text = e.target.result;
+                        const lines = text.split('\n').filter(line => line.trim());
+                        
+                        if (lines.length < 2) {
+                            showError('CSV file must have at least a header row and one data row.');
+                            return;
+                        }
+
+                        // Parse header
+                        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                        
+                        // Find column indices (case-insensitive)
+                        const nameIdx = findColumnIndex(headers, ['product name', 'name', 'product']);
+                        const idIdx = findColumnIndex(headers, ['product id', 'id', 'productid']);
+                        const currentPriceIdx = findColumnIndex(headers, ['current price', 'price', 'currentprice']);
+                        const oldPriceIdx = findColumnIndex(headers, ['old price', 'oldprice', 'original price']);
+
+                        if (nameIdx === -1 || idIdx === -1 || currentPriceIdx === -1) {
+                            showError('Missing required columns. Required: Product Name, Product ID, Current Price');
+                            return;
+                        }
+
+                        // Parse data rows
+                        bulkProducts = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            const values = parseCSVLine(lines[i]);
+                            if (values.length === 0) continue;
+
+                            const product = {
+                                name: (values[nameIdx] || '').trim(),
+                                id: (values[idIdx] || '').trim(),
+                                currentPrice: parseFloat((values[currentPriceIdx] || '0').toString().replace(/[^\d.]/g, '')) || 0,
+                                oldPrice: oldPriceIdx >= 0 ? parseFloat((values[oldPriceIdx] || '0').toString().replace(/[^\d.]/g, '')) || 0 : 0
+                            };
+
+                            if (product.name && product.id && product.currentPrice > 0) {
+                                bulkProducts.push(product);
+                            }
+                        }
+
+                        if (bulkProducts.length === 0) {
+                            showError('No valid products found in the file. Please check your data.');
+                            return;
+                        }
+
+                        showSuccess(`Successfully loaded ${bulkProducts.length} product(s) from ${file.name}`);
+                        document.getElementById('bulk-print-btn').disabled = false;
+                        document.getElementById('bulk-download-btn').disabled = false;
+                    } catch (error) {
+                        showError('Error parsing CSV file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            function parseCSVLine(line) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                return values;
+            }
+
+            function parseExcel(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        
+                        if (workbook.SheetNames.length === 0) {
+                            showError('Excel file has no sheets.');
+                            return;
+                        }
+
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                        if (jsonData.length < 2) {
+                            showError('Excel file must have at least a header row and one data row.');
+                            return;
+                        }
+
+                        // Parse header (first row)
+                        const headers = jsonData[0].map(h => (h || '').toString().toLowerCase().trim());
+                        
+                        // Find column indices
+                        const nameIdx = findColumnIndex(headers, ['product name', 'name', 'product']);
+                        const idIdx = findColumnIndex(headers, ['product id', 'id', 'productid']);
+                        const currentPriceIdx = findColumnIndex(headers, ['current price', 'price', 'currentprice']);
+                        const oldPriceIdx = findColumnIndex(headers, ['old price', 'oldprice', 'original price']);
+
+                        if (nameIdx === -1 || idIdx === -1 || currentPriceIdx === -1) {
+                            showError('Missing required columns. Required: Product Name, Product ID, Current Price');
+                            return;
+                        }
+
+                        // Parse data rows
+                        bulkProducts = [];
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (!row || row.length === 0) continue;
+
+                            const product = {
+                                name: (row[nameIdx] || '').toString().trim(),
+                                id: (row[idIdx] || '').toString().trim(),
+                                currentPrice: parseFloat((row[currentPriceIdx] || '0').toString().replace(/[^\d.]/g, '')) || 0,
+                                oldPrice: oldPriceIdx >= 0 && row[oldPriceIdx] ? parseFloat((row[oldPriceIdx] || '0').toString().replace(/[^\d.]/g, '')) || 0 : 0
+                            };
+
+                            if (product.name && product.id && product.currentPrice > 0) {
+                                bulkProducts.push(product);
+                            }
+                        }
+
+                        if (bulkProducts.length === 0) {
+                            showError('No valid products found in the file. Please check your data.');
+                            return;
+                        }
+
+                        showSuccess(`Successfully loaded ${bulkProducts.length} product(s) from ${file.name}`);
+                        document.getElementById('bulk-print-btn').disabled = false;
+                        document.getElementById('bulk-download-btn').disabled = false;
+                    } catch (error) {
+                        showError('Error parsing Excel file: ' + error.message);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            function findColumnIndex(headers, possibleNames) {
+                for (const name of possibleNames) {
+                    const idx = headers.indexOf(name.toLowerCase());
+                    if (idx !== -1) return idx;
+                }
+                return -1;
+            }
+
+            function showSuccess(message) {
+                const fileInfo = document.getElementById('file-info');
+                const fileError = document.getElementById('file-error');
+                fileError.classList.add('hidden');
+                fileInfo.textContent = '✓ ' + message;
+                fileInfo.classList.remove('hidden');
+            }
+
+            function showError(message) {
+                const fileInfo = document.getElementById('file-info');
+                const fileError = document.getElementById('file-error');
+                fileInfo.classList.add('hidden');
+                fileError.textContent = '✗ ' + message;
+                fileError.classList.remove('hidden');
+            }
+
+            // Bulk PDF generation
+            async function generateBulkPDF() {
+                if (!bulkProducts || bulkProducts.length === 0) {
+                    alert('No products loaded. Please upload a file first.');
+                    return null;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const LABEL_WIDTH_MM = 45;
+                const LABEL_HEIGHT_MM = 45;
+
+                // Create a new PDF document
+                const doc = new jsPDF({
+                    unit: 'mm',
+                    format: [LABEL_WIDTH_MM, LABEL_HEIGHT_MM],
+                    orientation: 'portrait',
+                    compress: true
+                });
+
+                const companyNameEl = document.getElementById('ticket-company-name');
+                const companyLogoSvg = companyNameEl ? companyNameEl.querySelector('svg') : null;
+
+                // Generate PDF for each product
+                for (let i = 0; i < bulkProducts.length; i++) {
+                    const product = bulkProducts[i];
+                    
+                    // Add new page for each product (except the first one)
+                    if (i > 0) {
+                        doc.addPage([LABEL_WIDTH_MM, LABEL_HEIGHT_MM], 'portrait');
+                    }
+
+                    // Generate QR code for this product
+                    const qrcodeDataUrl = await generateQRCodeWithLogo(product.id, 200, companyLogoSvg);
+                    
+                    if (!qrcodeDataUrl) {
+                        console.warn(`Failed to generate QR code for product: ${product.name}`);
+                        continue;
+                    }
+
+                    // Set colors
+                    doc.setTextColor(0, 0, 0);
+                    doc.setDrawColor(0, 0, 0);
+
+                    // Constants for layout
+                    const PADDING_MM = 10 * (LABEL_WIDTH_MM / 900) * (25.4 / 96);
+                    const BORDER_WIDTH_MM = 3 * (LABEL_WIDTH_MM / 900) * (25.4 / 96);
+                    const CONTENT_X = PADDING_MM + BORDER_WIDTH_MM;
+                    const CONTENT_Y = PADDING_MM + BORDER_WIDTH_MM;
+                    const CONTENT_WIDTH = LABEL_WIDTH_MM - (PADDING_MM * 2) - (BORDER_WIDTH_MM * 2);
+                    const CONTENT_HEIGHT = LABEL_HEIGHT_MM - (PADDING_MM * 2) - (BORDER_WIDTH_MM * 2);
+                    const QR_SIZE_MM = 18;
+                    const PRODUCT_NAME_FONT_SIZE_PT = 8.6;
+                    const PRICE_FONT_SIZE_PT = 22;
+                    const OLD_PRICE_FONT_SIZE_PT = 9.1;
+
+                    // Draw border
+                    doc.setLineWidth(BORDER_WIDTH_MM);
+                    doc.rect(PADDING_MM, PADDING_MM, LABEL_WIDTH_MM - (PADDING_MM * 2), LABEL_HEIGHT_MM - (PADDING_MM * 2));
+
+                    // Product Name
+                    let yPos = CONTENT_Y + 2;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(PRODUCT_NAME_FONT_SIZE_PT);
+                    const nameLines = doc.splitTextToSize(product.name, CONTENT_WIDTH - 4);
+                    const productNameTextY = yPos + (PRODUCT_NAME_FONT_SIZE_PT * 0.35);
+                    doc.text(nameLines, CONTENT_X + (CONTENT_WIDTH / 2), productNameTextY, { align: 'center', maxWidth: CONTENT_WIDTH - 4 });
+                    yPos = productNameTextY + (PRODUCT_NAME_FONT_SIZE_PT * 0.35 * nameLines.length) + 0.8;
+
+                    // QR Code
+                    const qrX = CONTENT_X + (CONTENT_WIDTH - QR_SIZE_MM) / 2;
+                    doc.addImage(qrcodeDataUrl, 'PNG', qrX, yPos, QR_SIZE_MM, QR_SIZE_MM);
+                    yPos += QR_SIZE_MM + 3;
+
+                    // Product ID
+                    if (product.id && product.id.trim()) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(6.3);
+                        doc.text(product.id.trim(), CONTENT_X + (CONTENT_WIDTH / 2), yPos, { align: 'center' });
+                        yPos += 3.5;
+                    }
+
+                    // Prices
+                    const bottomMargin = 1;
+                    const bottomY = CONTENT_Y + CONTENT_HEIGHT - bottomMargin;
+                    const priceX = CONTENT_X + CONTENT_WIDTH - 2;
+                    const showOldPrice = product.oldPrice > product.currentPrice && product.oldPrice > 0;
+
+                    // Current Price
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(PRICE_FONT_SIZE_PT);
+                    const priceText = product.currentPrice > 0 ? `${formatNumber(Math.round(product.currentPrice))} DZD` : '';
+                    if (priceText) {
+                        doc.text(priceText, priceX, bottomY, { align: 'right' });
+                    }
+
+                    // Old Price with strikethrough
+                    if (showOldPrice && product.oldPrice > 0) {
+                        doc.setFont('helvetica', 'normal');
+                        doc.setFontSize(OLD_PRICE_FONT_SIZE_PT);
+                        const oldPriceText = `${formatNumber(Math.round(product.oldPrice))} DZD`;
+                        const oldPriceY = bottomY - (PRICE_FONT_SIZE_PT * 0.25) - (OLD_PRICE_FONT_SIZE_PT * 0.15);
+                        const textWidth = doc.getTextWidth(oldPriceText);
+                        doc.text(oldPriceText, priceX, oldPriceY, { align: 'right' });
+                        
+                        const strikeStartX = priceX - textWidth - 0.3;
+                        const strikeEndX = priceX + 0.3;
+                        const strikeY = oldPriceY - (OLD_PRICE_FONT_SIZE_PT * 0.14);
+                        doc.setLineWidth(0.3);
+                        doc.setDrawColor(0, 0, 0);
+                        doc.line(strikeStartX, strikeY, strikeEndX, strikeY);
+                    }
+                }
+
+                return doc;
+            }
+
+            // Helper function to generate QR code with logo (reuse from single ticket)
+            async function generateQRCodeWithLogo(text, size, logoSvg) {
+                return new Promise((resolve) => {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.top = '-9999px';
+                    document.body.appendChild(tempDiv);
+                    
+                    new QRCode(tempDiv, {
+                        text: text,
+                        width: size,
+                        height: size,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    
+                    let attempts = 0;
+                    const maxAttempts = 30;
+                    
+                    const checkAndAddLogo = async () => {
+                        attempts++;
+                        const qrCanvas = tempDiv.querySelector('canvas');
+                        
+                        if (!qrCanvas || qrCanvas.width === 0 || qrCanvas.height === 0) {
+                            if (attempts < maxAttempts) {
+                                setTimeout(checkAndAddLogo, 50);
+                            } else {
+                                if (qrCanvas) {
+                                    const dataUrl = qrCanvas.toDataURL('image/png');
+                                    document.body.removeChild(tempDiv);
+                                    resolve(dataUrl);
+                                } else {
+                                    document.body.removeChild(tempDiv);
+                                    resolve(null);
+                                }
+                            }
+                            return;
+                        }
+                        
+                        if (logoSvg) {
+                            try {
+                                const logoDataUrl = await svgToCanvas(logoSvg, size * 0.30 / (25.4 / 96));
+                                
+                                if (!logoDataUrl) {
+                                    const dataUrl = qrCanvas.toDataURL('image/png');
+                                    document.body.removeChild(tempDiv);
+                                    resolve(dataUrl);
+                                    return;
+                                }
+                                
+                                const logoImg = new Image();
+                                logoImg.onload = function() {
+                                    const ctx = qrCanvas.getContext('2d');
+                                    const qrSize = qrCanvas.width;
+                                    const logoSize = Math.floor(qrSize * 0.30);
+                                    const logoX = (qrSize - logoSize) / 2;
+                                    const logoY = (qrSize - logoSize) / 2;
+                                    
+                                    ctx.fillStyle = '#ffffff';
+                                    const padding = logoSize * 0.12;
+                                    ctx.fillRect(logoX - padding, logoY - padding, logoSize + (padding * 2), logoSize + (padding * 2));
+                                    ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+                                    
+                                    const finalDataUrl = qrCanvas.toDataURL('image/png');
+                                    document.body.removeChild(tempDiv);
+                                    resolve(finalDataUrl);
+                                };
+                                logoImg.onerror = function() {
+                                    const dataUrl = qrCanvas.toDataURL('image/png');
+                                    document.body.removeChild(tempDiv);
+                                    resolve(dataUrl);
+                                };
+                                logoImg.src = logoDataUrl;
+                            } catch (error) {
+                                console.error('Error adding logo to QR code:', error);
+                                const dataUrl = qrCanvas.toDataURL('image/png');
+                                document.body.removeChild(tempDiv);
+                                resolve(dataUrl);
+                            }
+                        } else {
+                            const dataUrl = qrCanvas.toDataURL('image/png');
+                            document.body.removeChild(tempDiv);
+                            resolve(dataUrl);
+                        }
+                    };
+                    
+                    setTimeout(checkAndAddLogo, 100);
+                });
+            }
+
+            window.bulkPrintTickets = async function() {
+                if (!bulkProducts || bulkProducts.length === 0) {
+                    alert('No products loaded. Please upload a file first.');
+                    return;
+                }
+
+                const doc = await generateBulkPDF();
+                if (!doc) return;
+                
+                const pdfBlob = doc.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                const printWindow = window.open(pdfUrl);
+                
+                printWindow.onload = function() {
+                    setTimeout(() => {
+                        printWindow.print();
+                        setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+                    }, 250);
+                };
+            };
+
+            window.bulkDownloadTickets = async function() {
+                if (!bulkProducts || bulkProducts.length === 0) {
+                    alert('No products loaded. Please upload a file first.');
+                    return;
+                }
+
+                const doc = await generateBulkPDF();
+                if (!doc) return;
+                
+                doc.save(`bulk_tickets_${bulkProducts.length}_products.pdf`);
+            };
         } // End of initApp function
 
     </script>
